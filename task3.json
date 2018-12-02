@@ -1,0 +1,13 @@
+{
+    "pins":
+        {
+            "1": "machine.Pin(1, machine.Pin.IN)",
+            "2": "machine.Pin(2, machine.Pin.IN)",
+            "3": "machine.Pin(3, machine.Pin.IN)",
+            "4": "machine.Pin(4, machine.Pin.IN)"
+        },
+    "sensor":
+        {
+            "temperature": "temp_c(i2c.readfrom_mem(address, temp_reg, 2))"
+        }
+}
