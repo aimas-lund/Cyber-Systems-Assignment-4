@@ -51,14 +51,24 @@ ap.active (True)
 ap.config (essid = 'CHAMPION-DU-MONDE')
 ap.config (authmode = 3, password = 'france1820')
 
+pins = [machine.Pin(i, machine.Pin.IN) for i in (0, 2, 4, 5, 12, 13, 14, 15)]
+
 html = """<!DOCTYPE html>
 <html>
     <head> <title>ESP32 Pins</title> </head>
-    <body>
-        %s
+    <body> <h1>ESP32 Pins</h1>
+        <table border="1"> <tr><th>Pin</th><th>Value</th></tr> %s </table>
     </body>
 </html>
 """
+
+commands = {
+    "exit": "break",
+    "changeled": "switchLEDState(pinNo)",
+    "changecol": "changeNeoColor(pinNo, index, color)",
+    "readpin": "readPin(pinNo)",
+    "readtemp": "temp_c(i2c.readfrom_mem(address, temp_reg, 2))"
+}
 
 addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
 
@@ -68,53 +78,33 @@ s.listen(1)
 
 print('listening on', addr)
 
-#Remove these from the string
-removelist = ['Referer', ' ', 'http://192.168.4.1/', '\r\n', ':']
-
 while True:
-    keylist = []
-    req = ['']
-
     cl, addr = s.accept()
     print('client connected from', addr)
-    cl_file = cl.makefile('rwb', 0)
-
-    json = '{"pins": {"12": "%d","13": "%d","33": "%d"},"sensor": {"temperature": "%d"}}'
-    json = json % (pin12.value(), pin13.value(),
-                   pin33.value(), temp_c(i2c.readfrom_mem(address, temp_reg, 2)))
-    jsonObject = ujson.loads(json)
+    #cl_file = cl.makefile('rwb', 0)
 
     while True:
-        line = cl_file.readline()
-        req = line.decode('ascii')
+        command = cl.recv(1024)
+        command = command.decode('ascii')
+        print(command)
+        command = command.split(" ")
+        print(command)
+        if command[0] in commands:
+            key = "commands"
+            for word in command:
+                key += "[%s]" % word
 
-        if 'Referer' in req:
-            for entry in removelist:
-                req = req.replace(entry, '')
-
-            keylist = req.split('/')
+            print(key)
+            try:
+                eval(key)
+            except KeyError:
+                msg = b'"Invalid key" + "\r\n"
+                cl.send(msg)
+            except TypeError:
+                msg = b'"Invalid amount of arguments" + "\r\n"
+                cl.send(msg)
         else:
-            pass
+            continue
 
-        if not line or line == b'\r\n':
-            break
-
-    #Determine output
-    if len(keylist) == 0:
-        outputStr = json
-    else:
-        outputStr = "jsonObject"
-        for entry in keylist:
-            addKey = '[%s]' % repr(entry)
-            outputStr = outputStr + addKey
-
-    try:
-        output = eval("ujson.dumps(" + str(eval(outputStr)) + ")")
-
-    except KeyError:
-        output = "No Result"
-
-    print("This is the output: %s" % output)
-    response = html % output #Some bug, where it does not show the output correctly in the browser
-    cl.send(response)
+    print("Disconnecting...")
     cl.close()
