@@ -1,10 +1,9 @@
 {
     "pins":
         {
-            "1": "machine.Pin(1, machine.Pin.IN)",
-            "2": "machine.Pin(2, machine.Pin.IN)",
-            "3": "machine.Pin(3, machine.Pin.IN)",
-            "4": "machine.Pin(4, machine.Pin.IN)"
+            "12": "machine.Pin(12, machine.Pin.IN).value",
+            "13": "machine.Pin(13, machine.Pin.IN).value",
+            "33": "machine.Pin(33, machine.Pin.IN).value"
         },
     "sensor":
         {
