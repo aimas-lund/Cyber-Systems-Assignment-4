@@ -1,12 +1,12 @@
 import machine, neopixel, network, socket, ujson
 
 def switchLEDState(pinNo):
-    boundPin = machine.Pin(pinNo, machine.Pin.IN)
+    boundPin = machine.Pin(pinNo, machine.Pin.OUT)
 
-    if boundPin == 0:
-        boundPin.value(1)
+    if boundPin.value() == 0:
+        boundPin(1)
     else:
-        boundPin.value(0)
+        boundPin(0)
 
 def changeNeoColor(pinNo, index, color):
     np = neopixel.NeoPixel(machine.Pin(pinNo), 8, bpp=3) #Pin 12
@@ -22,7 +22,7 @@ def changeNeoColor(pinNo, index, color):
     np[index] = colors[color]
 
 def readPin(pinNo):
-    boundPin = machine.Pin(pinNo, machine.Pin.OUT)
+    boundPin = machine.Pin(pinNo, machine.Pin.IN)
     value = boundPin.value()
 
     return(value)
@@ -64,10 +64,10 @@ html = """<!DOCTYPE html>
 
 commands = {
     "exit": "break",
-    "changeled": "switchLEDState(pinNo)",
-    "changecol": "changeNeoColor(pinNo, index, color)",
-    "readpin": "readPin(pinNo)",
-    "readtemp": "temp_c(i2c.readfrom_mem(address, temp_reg, 2))"
+    "changeled": "switchLEDState(%d)",
+    "changecol": "changeNeoColor(%d,%d,%s)",
+    "readpin": "readPin(%d)",
+    "readtemp": "temp_c(i2c.readfrom_mem(%d, %d, %d))"
 }
 
 addr = socket.getaddrinfo('0.0.0.0', 80)[0][-1]
@@ -83,28 +83,50 @@ while True:
     print('client connected from', addr)
     #cl_file = cl.makefile('rwb', 0)
 
-    while True:
+    while True: #Determine the arguments in the command
         command = cl.recv(1024)
-        command = command.decode('ascii')
+        command = command.decode('ascii').lower()
         print(command)
-        command = command.split(" ")
-        print(command)
-        if command[0] in commands:
-            key = "commands"
-            for word in command:
-                key += "[%s]" % word
+        arg = command.split(" ")
+        print(arg)
+        if arg[0] not in commands:
 
-            print(key)
-            try:
-                eval(key)
-            except KeyError:
-                msg = b'"Invalid key" + "\r\n"
+            msg = "Invalid command" + "\r\n"
+            cl.send(msg)
+            continue
+        elif command == "exit":
+            cl.close()
+            break
+        else:
+            key = arg[0]
+            val = commands[key]
+            del arg[0]
+
+
+            for i in range(len(arg)): #Convert numbers to integers (if possible)
+                try:
+                    arg[i] = int(arg[i])
+                except TypeError:
+                    pass
+                except ValueError:
+                    pass
+
+            try: #Execute the command
+                command = val % tuple(arg)
+                print(command)
+                eval(command)
+                msg = "Command executed" + "\r\n"
                 cl.send(msg)
             except TypeError:
-                msg = b'"Invalid amount of arguments" + "\r\n"
+                msg = "Invalid amount of arguments" + "\r\n"
                 cl.send(msg)
-        else:
-            continue
+                continue
+            except NameError:
+                msg = "Invalid amount of arguments" + "\r\n"
+                cl.send(msg)
+                continue
+
+            msg = None
 
     print("Disconnecting...")
     cl.close()
