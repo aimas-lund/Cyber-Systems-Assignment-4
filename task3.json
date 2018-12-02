@@ -1,12 +1,10 @@
 {
-    "pins":
-        {
-            "12": "machine.Pin(12, machine.Pin.IN).value",
-            "13": "machine.Pin(13, machine.Pin.IN).value",
-            "33": "machine.Pin(33, machine.Pin.IN).value"
-        },
-    "sensor":
-        {
-            "temperature": "temp_c(i2c.readfrom_mem(address, temp_reg, 2))"
-        }
-}
+    "pins": {
+      "12": "machine.Pin(12, machine.Pin.IN).value",
+      "13": "machine.Pin(13, machine.Pin.IN).value",
+      "33": "machine.Pin(33, machine.Pin.IN).value"
+    },
+    "sensor": {
+      "temperature": "temp_c(i2c.readfrom_mem(address, temp_reg, 2))"
+    }
+  }
