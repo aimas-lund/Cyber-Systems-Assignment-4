@@ -1,30 +1,47 @@
 import machine, neopixel, network, socket, ujson
 
-def switchLEDState(pinNo):
-    boundPin = machine.Pin(pinNo, machine.Pin.OUT)
+def switchPINState(pinNo): #Switches the state of an LED output
+    try:
+        boundPin = machine.Pin(pinNo, machine.Pin.OUT)
 
-    if boundPin.value() == 0:
-        boundPin(1)
-    else:
-        boundPin(0)
+        if boundPin.value() == 0:
+            boundPin(1)
+        else:
+            boundPin(0)
+    except ValueError:
+        print("Invalid pin number." + "\r\n")
 
-def changeNeoColor(pinNo, index, color):
+def changeNeoColor(pinNo, index, color):#Changes the color of one LED
     np = neopixel.NeoPixel(machine.Pin(pinNo), 8, bpp=3) #Pin 12
     colors = {
         "red": (0,255,0),
         "green": (255,0,0),
         "blue": (0,0,255),
-        "purple": (0,128,128),
+        "purple": (0,70,200),
         "yellow": (200,60,0),
         "white": (255,255,255),
         "off": (0,0,0)
     }
-    np[index] = colors[color]
+    try:
+        np[index] = colors[color]
+        np.write()
+    except KeyError:
+        print("Invalid key" + "\r\n" )
+
+def readButton(pinNo):
+    try:
+        boundPin = machine.Pin(pinNo, machine.Pin.IN, machine.Pin.PULL_UP)
+        value = boundPin.value()
+    except ValueError:
+        print("Invalid pin number." + "\r\n")
+    return(value)
 
 def readPin(pinNo):
-    boundPin = machine.Pin(pinNo, machine.Pin.IN)
-    value = boundPin.value()
-
+    try:
+        boundPin = machine.Pin(pinNo, machine.Pin.OUT)
+        value = boundPin.value()
+    except ValueError:
+        print("Invalid pin number." + "\r\n")
     return(value)
 
 #Setting up pins
@@ -64,9 +81,10 @@ html = """<!DOCTYPE html>
 
 commands = {
     "exit": "break",
-    "changeled": "switchLEDState(%d)",
+    "changepin": "switchPINState(%d)",
     "changecol": "changeNeoColor(%d,%d,%s)",
     "readpin": "readPin(%d)",
+    "readbutton": "readButton(%d)",
     "readtemp": "temp_c(i2c.readfrom_mem(%d, %d, %d))"
 }
 
@@ -90,18 +108,18 @@ while True:
         arg = command.split(" ")
         print(arg)
         if arg[0] not in commands:
-
             msg = "Invalid command" + "\r\n"
             cl.send(msg)
             continue
+
         elif command == "exit":
             cl.close()
             break
+
         else:
             key = arg[0]
             val = commands[key]
             del arg[0]
-
 
             for i in range(len(arg)): #Convert numbers to integers (if possible)
                 try:
@@ -114,9 +132,13 @@ while True:
             try: #Execute the command
                 command = val % tuple(arg)
                 print(command)
-                eval(command)
-                msg = "Command executed" + "\r\n"
-                cl.send(msg)
+                if ("readpin" in command.lower()) or ("readbutton" in command.lower()):
+                    msg = "Reading of pin: " + str(eval(command)) + "\r\n"
+                    cl.send(msg)
+                else:
+                    eval(command)
+                    msg = "Command executed" + "\r\n"
+                    cl.send(msg)
             except TypeError:
                 msg = "Invalid amount of arguments" + "\r\n"
                 cl.send(msg)
