@@ -24,6 +24,7 @@ ap.active (True)
 ap.config (essid = 'CHAMPION-DU-MONDE')
 ap.config (authmode = 3, password = 'france1820')
 
+#Setting up HTML
 html = """<!DOCTYPE html>
 <html>
     <head> <title>ESP32 Pins</title> </head>
@@ -52,6 +53,7 @@ while True:
     print('client connected from', addr)
     cl_file = cl.makefile('rwb', 0)
 
+    #Hardcoding json in script and loadning it as a json object using ujson module
     json = '{"pins": {"12": "%d","13": "%d","33": "%d"},"sensor": {"temperature": "%d"}}'
     json = json % (pin12.value(), pin13.value(),
                    pin33.value(), temp_c(i2c.readfrom_mem(address, temp_reg, 2)))
@@ -61,7 +63,7 @@ while True:
         line = cl_file.readline()
         req = line.decode('ascii')
 
-        if 'Referer' in req:
+        if 'Referer' in req: #Looking for any specifications in the url, e.g. ".../pins/1"
             print(repr(req))
             for entry in removelist:
                 req = req.replace(entry, '')
@@ -75,7 +77,7 @@ while True:
 
     print(keylist)
 
-    #Determine output
+    #Applying the arguments in the URL into the JSON object
     if len(keylist) == 0:
         outputStr = json
     else:
@@ -84,6 +86,7 @@ while True:
             addKey = '[%s]' % repr(entry)
             outputStr = outputStr + addKey
 
+    #Constructing the output string to the HTML
     try:
         print(outputStr)
         output = eval("ujson.dumps(" + str(eval(outputStr)) + ")")
