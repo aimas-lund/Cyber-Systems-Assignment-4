@@ -1,4 +1,4 @@
-import machine, time, os
+import machine, time
 
 
 #Setting up pins
@@ -21,10 +21,22 @@ while True:
     counter = int(input("Number of measurements you wish to read?"))
     timer = int(input("How many seconds between each measuments?"))
     f = open("Temp_Measurements.txt","w")
+    time_val = 0
     while counter>0:
         TEMPERATURE = temp_c(i2c.readfrom_mem(address, temp_reg, 2))
-        f.write("%d," % TEMPERATURE)
-        counter -= 1
-        time.sleep(timer)
+        if counter==1:
+            f.write("%d,%d" % (TEMPERATURE,time_val))
+            time_val += timer
+            counter -= 1
+            time.sleep(timer)
+        else:
+            f.write("%d,%d" % (TEMPERATURE,time_val))
+            time_val += timer
+            counter -= 1
+            time.sleep(timer)
     f.close()
     break
+
+#The document will have - for each line of the text file - the measured temperature "TEMPERATURE" at the time "time_val", both values seperated by commas. 
+#This will form a text file will have two columns by importing this csv document to excel, and by applying the "Text to colums" implemented Excel function
+#It will give another two columnds which can be plotted. First column as the temperature value and second as time corresponding to this temperature measured.
