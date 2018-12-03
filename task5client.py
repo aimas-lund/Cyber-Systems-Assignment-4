@@ -13,7 +13,11 @@ while True:
     msgb = bytearray(msg)
     s.send(msgb)
 
-    if msg.decode('utf-8').lower() == 'goodbye':
+    if msg.decode('utf-8').lower() == 'exit':
         break
+
+    response = s.recv(1024)
+    response = response.decode('ascii')
+    print(response)
 
     msg = None
