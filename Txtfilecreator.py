@@ -24,16 +24,10 @@ while True:
     time_val = 0
     while counter>0:
         TEMPERATURE = temp_c(i2c.readfrom_mem(address, temp_reg, 2))
-        if counter==1:
-            f.write("%d,%d" % (TEMPERATURE,time_val))
-            time_val += timer
-            counter -= 1
-            time.sleep(timer)
-        else:
-            f.write("%d,%d" % (TEMPERATURE,time_val))
-            time_val += timer
-            counter -= 1
-            time.sleep(timer)
+        f.write("%d,%d \n" % (TEMPERATURE,time_val))
+        time_val += timer
+        counter -= 1
+        time.sleep(timer)
     f.close()
     break
 
